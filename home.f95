@@ -1,8 +1,8 @@
-module Homework
-    use omp_lib
+module Task
+    use mpi
     implicit none
     contains
-        subroutine FindMaxCoordinates(A, x1, y1, x2, y2)
+        subroutine GetMaxCoordinates(A, x1, y1, x2, y2)
         implicit none
         real(8), intent(in), dimension(:,:) :: A
         integer(4), intent(out) :: x1, y1, x2, y2
@@ -37,8 +37,9 @@ module Homework
         x2=1
         y2=1
 
-        do L=1, n
-
+        call mpi_comm_size(MPI_COMM_WORLD, mpiSize, mpiErr)
+        call mpi_comm_rank(MPI_COMM_WORLD, mpiRank, mpiErr)
+        do L=(mpiRank+1), n,  mpiSize
             current_column = B(:, L)            
             do R=L,n
  
@@ -111,4 +112,4 @@ module Homework
         end subroutine FindMaxInArray
 
 
-end module Homework
+end module Task
