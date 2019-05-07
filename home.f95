@@ -11,10 +11,8 @@ module Task
         integer(4) :: mpiErr, mpiSize, mpiRank
         real(8), allocatable :: current_column(:), B(:,:)
         real(8) :: current_sum, max_sum
-        double precision maxall(2)
+        integer(8) maxall(2)
         logical :: transpos
-!         real(8), allocatable, dimension(:) :: max_sum   
-!         integer(4), allocatable, dimension(:):: X_1, X_2, Y_1, Y_2
 
         m = size(A, dim=1) 
         n = size(A, dim=2) 
@@ -28,7 +26,7 @@ module Task
             n = size(B, dim=2) 
         else
             B = A     
-            endif
+        endif
 
         allocate(current_column(m))
 
@@ -50,8 +48,6 @@ module Task
                 
                 call FindMaxInArray(current_column, current_sum, Up, Down) 
 
-
-                      
                 if (current_sum > max_sum) then
                     max_sum = current_sum
                     x1 = Up
@@ -62,16 +58,13 @@ module Task
             end do
         end do
         
-
-
-
         deallocate(current_column)
 
-       call mpi_allreduce(max_sum,maxall,1,mpi_2double_precision, mpi_maxloc,mpi_comm_world, mpiErr)
-       call mpi_bcast(x1,1,mpi_integer4,int(maxall(2)), mpi_comm_world,mpiErr)
-       call mpi_bcast(y1,1,mpi_integer4,int(maxall(2)), mpi_comm_world,mpiErr)
-       call mpi_bcast(x2,1,mpi_integer4,int(maxall(2)), mpi_comm_world,mpiErr)
-       call mpi_bcast(y2,1,mpi_integer4,int(maxall(2)), mpi_comm_world,mpiErr)
+        call mpi_allreduce(max_sum,maxall,1,mpi_2integer, mpi_maxloc,mpi_comm_world, mpiErr)
+        call mpi_bcast(x1,1,mpi_integer4,maxall(2), mpi_comm_world,mpiErr)
+        call mpi_bcast(y1,1,mpi_integer4,maxall(2), mpi_comm_world,mpiErr)
+        call mpi_bcast(x2,1,mpi_integer4,maxall(2), mpi_comm_world,mpiErr)
+        call mpi_bcast(y2,1,mpi_integer4,maxall(2), mpi_comm_world,mpiErr)
 
         if (transpos) then  
             tmp = x1
@@ -81,7 +74,7 @@ module Task
             tmp = y2
             y2 = x2
             x2 = tmp
-            endif
+        endif
 
         end subroutine
 
@@ -103,18 +96,18 @@ module Task
 
             do i=1, size(a)
                 cur_sum = cur_sum + a(i)
-            if (cur_sum > Sum) then
-                Sum = cur_sum
-                Up = minus_pos + 1
-                Down = i
+                if (cur_sum > Sum) then
+                  Sum = cur_sum
+                  Up = minus_pos + 1
+                  Down = i
                 endif
          
-            if (cur_sum < 0) then
-                cur_sum = 0
-                minus_pos = i
+                if (cur_sum < 0) then
+                  cur_sum = 0
+                  minus_pos = i
                 endif
 
-            enddo
+           enddo
 
         end subroutine FindMaxInArray
 
