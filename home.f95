@@ -1,5 +1,6 @@
 module Task
     use mpi
+   
     implicit none
     contains
         subroutine GetMaxCoordinates(A, x1, y1, x2, y2)
@@ -7,8 +8,10 @@ module Task
         real(8), intent(in), dimension(:,:) :: A
         integer(4), intent(out) :: x1, y1, x2, y2
         integer(4) :: n, L, R, Up, Down, m, tmp
+        integer(4) :: mpiErr, mpiSize, mpiRank
         real(8), allocatable :: current_column(:), B(:,:)
         real(8) :: current_sum, max_sum
+        double precision maxall(2)
         logical :: transpos
 !         real(8), allocatable, dimension(:) :: max_sum   
 !         integer(4), allocatable, dimension(:):: X_1, X_2, Y_1, Y_2
@@ -16,7 +19,6 @@ module Task
         m = size(A, dim=1) 
         n = size(A, dim=2) 
         transpos = .FALSE.
-
 
 
         if (m < n) then 
@@ -36,7 +38,6 @@ module Task
         y1=1
         x2=1
         y2=1
-
         call mpi_comm_size(MPI_COMM_WORLD, mpiSize, mpiErr)
         call mpi_comm_rank(MPI_COMM_WORLD, mpiRank, mpiErr)
         do L=(mpiRank+1), n,  mpiSize
@@ -60,11 +61,13 @@ module Task
                 endif
             end do
         end do
+        
 
 
 
         deallocate(current_column)
 
+       call mpi_allreduce(max_sum,maxall,1,mpi_2double_precision, mpi_maxloc,mpi_comm_world, mpiErr)
 
         if (transpos) then  
             tmp = x1
@@ -113,3 +116,4 @@ module Task
 
 
 end module Task
+
