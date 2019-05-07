@@ -68,6 +68,10 @@ module Task
         deallocate(current_column)
 
        call mpi_allreduce(max_sum,maxall,1,mpi_2double_precision, mpi_maxloc,mpi_comm_world, mpiErr)
+       call mpi_bcast(x1,1,mpi_integer4,int(maxall(2)), mpi_comm_world,mpiErr)
+       call mpi_bcast(y1,1,mpi_integer4,int(maxall(2)), mpi_comm_world,mpiErr)
+       call mpi_bcast(x2,1,mpi_integer4,int(maxall(2)), mpi_comm_world,mpiErr)
+       call mpi_bcast(y2,1,mpi_integer4,int(maxall(2)), mpi_comm_world,mpiErr)
 
         if (transpos) then  
             tmp = x1
