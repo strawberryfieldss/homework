@@ -7,7 +7,7 @@ module Task
         implicit none
         real(8), intent(in), dimension(:,:) :: A
         integer(4), intent(out) :: x1, y1, x2, y2
-        integer(4) :: n, L, R, Up, Down, m, tmp, k
+        integer(4) :: n, L, R, Up, Down, m, tmp, rankmax
         integer(4) :: mpiErr, mpiSize, mpiRank
         real(8), allocatable :: current_column(:), B(:,:)
         real(8) :: current_sum, max_sum, maxall, maxalll
@@ -69,22 +69,22 @@ module Task
         call mpi_allreduce(max_sum,maxall,1,mpi_real8, mpi_max,mpi_comm_world, mpiErr)
 
         if (maxall==max_sum) then
-            k=mpiRank
+            rankmax=mpiRank
             if (mpiRank/=0) then 
-                call mpi_isend(k, 1, mpi_integer4, 0, 666, MPI_COMM_WORLD, mpiErr)
+                call mpi_isend(rankmax, 1, mpi_integer4, 0, 666, MPI_COMM_WORLD, mpiErr)
             end if
         else if (mpiRank==0) then
- 	    call mpi_irecv(k,1, mpi_integer4, mpi_any_source, 666, MPI_COMM_WORLD, status,  mpiErr)
+ 	    call mpi_irecv(rankmax,1, mpi_integer4, mpi_any_source, 666, MPI_COMM_WORLD, status,  mpiErr)
 	end if
 
         call mpi_barrier(MPI_COMM_WORLD,mpiErr)
 
-        call mpi_bcast(k,1,mpi_integer4,0, mpi_comm_world,mpiErr)
+        call mpi_bcast(rankmax,1,mpi_integer4,0, mpi_comm_world,mpiErr)
 
-        call mpi_bcast(x1,1,mpi_integer4,k, mpi_comm_world,mpiErr)
-        call mpi_bcast(y1,1,mpi_integer4,k, mpi_comm_world,mpiErr)
-        call mpi_bcast(x2,1,mpi_integer4,k, mpi_comm_world,mpiErr)
-        call mpi_bcast(y2,1,mpi_integer4,k, mpi_comm_world,mpiErr)
+        call mpi_bcast(x1,1,mpi_integer4,rankmax, mpi_comm_world,mpiErr)
+        call mpi_bcast(y1,1,mpi_integer4,rankmax, mpi_comm_world,mpiErr)
+        call mpi_bcast(x2,1,mpi_integer4,rankmax, mpi_comm_world,mpiErr)
+        call mpi_bcast(y2,1,mpi_integer4,rankmax, mpi_comm_world,mpiErr)
 
 
 
