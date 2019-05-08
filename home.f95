@@ -7,12 +7,14 @@ module Task
         implicit none
         real(8), intent(in), dimension(:,:) :: A
         integer(4), intent(out) :: x1, y1, x2, y2
-        integer(4) :: n, L, R, Up, Down, m, tmp
+        integer(4) :: n, L, R, Up, Down, m, tmp, k
         integer(4) :: mpiErr, mpiSize, mpiRank
         real(8), allocatable :: current_column(:), B(:,:)
-        real(8) :: current_sum, max_sum
-        integer(8) maxall(2)
+        real(8) :: current_sum, max_sum, maxall, maxalll
+        integer(4)  :: coord(4)
         logical :: transpos
+        integer(4), dimension(MPI_STATUS_SIZE) :: status
+
 
         m = size(A, dim=1) 
         n = size(A, dim=2) 
@@ -38,6 +40,7 @@ module Task
         y2=1
         call mpi_comm_size(MPI_COMM_WORLD, mpiSize, mpiErr)
         call mpi_comm_rank(MPI_COMM_WORLD, mpiRank, mpiErr)
+        
         do L=(mpiRank+1), n,  mpiSize
             current_column = B(:, L)            
             do R=L,n
@@ -48,6 +51,7 @@ module Task
                 
                 call FindMaxInArray(current_column, current_sum, Up, Down) 
 
+                      
                 if (current_sum > max_sum) then
                     max_sum = current_sum
                     x1 = Up
@@ -57,14 +61,32 @@ module Task
                 endif
             end do
         end do
-        
+
+
+
         deallocate(current_column)
 
-        call mpi_allreduce(max_sum,maxall,1,mpi_2integer, mpi_maxloc,mpi_comm_world, mpiErr)
-        call mpi_bcast(x1,1,mpi_integer4,maxall(2), mpi_comm_world,mpiErr)
-        call mpi_bcast(y1,1,mpi_integer4,maxall(2), mpi_comm_world,mpiErr)
-        call mpi_bcast(x2,1,mpi_integer4,maxall(2), mpi_comm_world,mpiErr)
-        call mpi_bcast(y2,1,mpi_integer4,maxall(2), mpi_comm_world,mpiErr)
+        call mpi_allreduce(max_sum,maxall,1,mpi_real8, mpi_max,mpi_comm_world, mpiErr)
+
+        if (maxall==max_sum) then
+            k=mpiRank
+            if (mpiRank/=0) then 
+                call mpi_isend(k, 1, mpi_integer4, 0, 666, MPI_COMM_WORLD, mpiErr)
+            end if
+        else if (mpiRank==0) then
+ 	    call mpi_irecv(k,1, mpi_integer4, mpi_any_source, 666, MPI_COMM_WORLD, status,  mpiErr)
+	end if
+
+        call mpi_barrier(MPI_COMM_WORLD,mpiErr)
+
+        call mpi_bcast(k,1,mpi_integer4,0, mpi_comm_world,mpiErr)
+
+        call mpi_bcast(x1,1,mpi_integer4,k, mpi_comm_world,mpiErr)
+        call mpi_bcast(y1,1,mpi_integer4,k, mpi_comm_world,mpiErr)
+        call mpi_bcast(x2,1,mpi_integer4,k, mpi_comm_world,mpiErr)
+        call mpi_bcast(y2,1,mpi_integer4,k, mpi_comm_world,mpiErr)
+
+
 
         if (transpos) then  
             tmp = x1
@@ -74,7 +96,7 @@ module Task
             tmp = y2
             y2 = x2
             x2 = tmp
-        endif
+            endif
 
         end subroutine
 
@@ -96,18 +118,18 @@ module Task
 
             do i=1, size(a)
                 cur_sum = cur_sum + a(i)
-                if (cur_sum > Sum) then
-                  Sum = cur_sum
-                  Up = minus_pos + 1
-                  Down = i
+            if (cur_sum > Sum) then
+                Sum = cur_sum
+                Up = minus_pos + 1
+                Down = i
                 endif
          
-                if (cur_sum < 0) then
-                  cur_sum = 0
-                  minus_pos = i
+            if (cur_sum < 0) then
+                cur_sum = 0
+                minus_pos = i
                 endif
 
-           enddo
+            enddo
 
         end subroutine FindMaxInArray
 
