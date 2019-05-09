@@ -7,7 +7,7 @@ module Task
         implicit none
         real(8), intent(in), dimension(:,:) :: A
         integer(4), intent(out) :: x1, y1, x2, y2
-        integer(4) :: n, L, R, Up, Down, m, tmp, rankmax
+        integer(4) :: n, L, R, Up, Down, m, tmp, rankmax, i
         integer(4) :: mpiErr, mpiSize, mpiRank
         real(8), allocatable :: current_column(:), B(:,:)
         real(8) :: current_sum, max_sum, maxall, maxalll
@@ -74,7 +74,9 @@ module Task
                 call mpi_isend(rankmax, 1, mpi_integer4, 0, 666, MPI_COMM_WORLD, mpiErr)
             end if
         else if (mpiRank==0) then
- 	    call mpi_irecv(rankmax,1, mpi_integer4, mpi_any_source, 666, MPI_COMM_WORLD, status,  mpiErr)
+            do i=1,mpiSize
+ 	       call mpi_irecv(rankmax,1, mpi_integer4, mpi_any_source, 666, MPI_COMM_WORLD, status,  mpiErr)
+            enddo
 	end if
 
         call mpi_barrier(MPI_COMM_WORLD,mpiErr)
