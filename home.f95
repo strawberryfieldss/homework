@@ -3,14 +3,15 @@ module Task
    
     implicit none
     contains
-        subroutine GetMaxCoordinates(A, x1, y1, x2, y2)
+    
+    subroutine GetMaxCoordinates(A, x1, y1, x2, y2)
         implicit none
         real(8), intent(in), dimension(:,:) :: A
         integer(4), intent(out) :: x1, y1, x2, y2
-        integer(4) :: n, L, R, Up, Down, m, tmp, rankmax, i
+        integer(4) :: n, L, R, Up, Down, m, tmp, rankmax, i, allrank
         integer(4) :: mpiErr, mpiSize, mpiRank
         real(8), allocatable :: current_column(:), B(:,:)
-        real(8) :: current_sum, max_sum, maxall, maxalll
+        real(8) :: current_sum, max_sum, maxall
         integer(4)  :: coord(4)
         logical :: transpos
         integer(4), dimension(MPI_STATUS_SIZE) :: status
@@ -45,52 +46,42 @@ module Task
             current_column = B(:, L)            
             do R=L,n
  
-                if (R > L) then 
+                 if (R > L) then 
                     current_column = current_column + B(:, R)
-                endif
+                 endif
                 
-                call FindMaxInArray(current_column, current_sum, Up, Down) 
+                 call FindMaxInArray(current_column, current_sum, Up, Down) 
 
                       
-                if (current_sum > max_sum) then
+                 if (current_sum > max_sum) then
                     max_sum = current_sum
                     x1 = Up
                     x2 = Down
                     y1 = L
                     y2 = R
-                endif
-            end do
-        end do
+                 endif
+              end do
+          end do
 
 
 
-        deallocate(current_column)
+          deallocate(current_column)
 
-        call mpi_allreduce(max_sum,maxall,1,mpi_real8, mpi_max,mpi_comm_world, mpiErr)
+          call mpi_allreduce(max_sum,maxall,1,mpi_real8, mpi_max,mpi_comm_world, mpiErr)
 
-        if (maxall==max_sum) then
-            rankmax=mpiRank
-            if (mpiRank/=0) then 
-                call mpi_isend(rankmax, 1, mpi_integer4, 0, 666, MPI_COMM_WORLD, mpiErr)
-            end if
-        else if (mpiRank==0) then
-            do i=1,mpiSize
- 	       call mpi_irecv(rankmax,1, mpi_integer4, mpi_any_source, 666, MPI_COMM_WORLD, status,  mpiErr)
-            enddo
-	end if
+	  allrank = -1
+          if (maxall==max_sum) allrank=mpirank
+	  
+          call mpi_allreduce(allrank, rankmax, 1, mpi_INTEGER4, mpi_max, mpi_comm_world, mpiErr)
 
-        call mpi_barrier(MPI_COMM_WORLD,mpiErr)
-
-        call mpi_bcast(rankmax,1,mpi_integer4,0, mpi_comm_world,mpiErr)
-
-        call mpi_bcast(x1,1,mpi_integer4,rankmax, mpi_comm_world,mpiErr)
-        call mpi_bcast(y1,1,mpi_integer4,rankmax, mpi_comm_world,mpiErr)
-        call mpi_bcast(x2,1,mpi_integer4,rankmax, mpi_comm_world,mpiErr)
-        call mpi_bcast(y2,1,mpi_integer4,rankmax, mpi_comm_world,mpiErr)
+          call mpi_bcast(x1,1,mpi_integer4,rankmax, mpi_comm_world,mpiErr)
+          call mpi_bcast(y1,1,mpi_integer4,rankmax, mpi_comm_world,mpiErr)
+          call mpi_bcast(x2,1,mpi_integer4,rankmax, mpi_comm_world,mpiErr)
+          call mpi_bcast(y2,1,mpi_integer4,rankmax, mpi_comm_world,mpiErr)
 
 
 
-        if (transpos) then  
+          if (transpos) then  
             tmp = x1
             x1 = y1
             y1 = tmp
@@ -98,7 +89,7 @@ module Task
             tmp = y2
             y2 = x2
             x2 = tmp
-            endif
+          endif
 
         end subroutine
 
@@ -120,15 +111,15 @@ module Task
 
             do i=1, size(a)
                 cur_sum = cur_sum + a(i)
-            if (cur_sum > Sum) then
-                Sum = cur_sum
-                Up = minus_pos + 1
-                Down = i
+                if (cur_sum > Sum) then
+                  Sum = cur_sum
+                  Up = minus_pos + 1
+                  Down = i
                 endif
          
-            if (cur_sum < 0) then
-                cur_sum = 0
-                minus_pos = i
+                if (cur_sum < 0) then
+                  cur_sum = 0
+                  minus_pos = i
                 endif
 
             enddo
