@@ -44,7 +44,7 @@ module Task
         
         do L=(mpiRank+1), n,  mpiSize
             current_column = B(:, L)            
-            do R=L,n
+            do R=L, n
  
                  if (R > L) then 
                     current_column = current_column + B(:, R)
@@ -67,17 +67,17 @@ module Task
 
           deallocate(current_column)
 
-          call mpi_allreduce(max_sum,maxall,1,mpi_real8, mpi_max,mpi_comm_world, mpiErr)
+          call mpi_allreduce(max_sum, maxall, 1, mpi_real8, mpi_max, mpi_comm_world, mpiErr)
 
 	  allrank = -1
           if (maxall==max_sum) allrank=mpirank
 	  
-          call mpi_allreduce(allrank, rankmax, 1, mpi_INTEGER4, mpi_max, mpi_comm_world, mpiErr)
+          call mpi_allreduce(allrank, rankmax, 1, mpi_integer4, mpi_max, mpi_comm_world, mpiErr)
 
-          call mpi_bcast(x1,1,mpi_integer4,rankmax, mpi_comm_world,mpiErr)
-          call mpi_bcast(y1,1,mpi_integer4,rankmax, mpi_comm_world,mpiErr)
-          call mpi_bcast(x2,1,mpi_integer4,rankmax, mpi_comm_world,mpiErr)
-          call mpi_bcast(y2,1,mpi_integer4,rankmax, mpi_comm_world,mpiErr)
+          call mpi_bcast(x1, 1, mpi_integer4, rankmax, mpi_comm_world, mpiErr)
+          call mpi_bcast(y1, 1, mpi_integer4, rankmax, mpi_comm_world, mpiErr)
+          call mpi_bcast(x2, 1, mpi_integer4, rankmax, mpi_comm_world, mpiErr)
+          call mpi_bcast(y2, 1, mpi_integer4, rankmax, mpi_comm_world, mpiErr)
 
 
 
